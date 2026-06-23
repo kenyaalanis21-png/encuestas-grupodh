@@ -402,7 +402,7 @@ function submitSurvey(){
   };
 
   fetch('https://script.google.com/macros/s/AKfycbxgl10L9Lb7TS7H7s9tMAyC6EbINrAuEvCAi124A_xrAQ0xXn5qR-28_Zky4DXU_T4l/exec',{
-    method:'POST',
+    method:'GET',
     mode:'no-cors',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify(payload)
