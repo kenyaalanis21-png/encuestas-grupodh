@@ -85,6 +85,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .export-steps li::before{content:"→ ";color:var(--green);font-weight:700}
 .summary-row{background:var(--bg);border-radius:7px;padding:9px 13px;margin-bottom:7px;font-size:0.78rem;color:var(--text-mid)}
 .summary-row strong{color:var(--navy);display:block;font-size:0.72rem;margin-bottom:1px}
+@keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:600px){.site-header{padding:18px 16px}.progress-wrap{padding:0 16px 12px}.main{padding:0 10px;margin-top:18px}.card-body{padding:16px 14px}.scale-btns{gap:4px}.header-badge{display:none}}
 </style>
 </head>
@@ -311,18 +312,17 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     <h2>¡Gracias por tu participación!</h2>
     <p>Tus respuestas han sido registradas de forma anónima y son fundamentales para identificar oportunidades de mejora en los procesos del área de Ventas.</p>
     <div class="export-box">
-      <h3>📊 Exportar respuestas al registro Excel</h3>
-      <p>Descarga el archivo CSV con tus respuestas y pégalo en la hoja <strong>"Coordinadores Regionales"</strong> del archivo <em>registro_encuestas.xlsx</em>.</p>
+      <h3>✅ Respuesta registrada automáticamente</h3>
+      <p>Tus respuestas fueron enviadas directamente al registro de <strong>Grupo DH</strong>. No necesitas hacer nada más.</p>
       <ul class="export-steps">
-        <li>Descarga el CSV con el botón de abajo</li>
-        <li>Abre <em>registro_encuestas.xlsx</em></li>
-        <li>Ve a la hoja "Coordinadores Regionales"</li>
-        <li>Copia la fila del CSV y pégala en la siguiente fila disponible (desde columna A)</li>
+        <li>Tus respuestas quedaron guardadas en el registro central</li>
+        <li>El administrador podrá verlas en tiempo real en el archivo Excel</li>
+        <li>Si deseas una copia personal, descarga el CSV con el botón de abajo</li>
       </ul>
       <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn btn-export" onclick="exportCSV()">
           <svg viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          Descargar CSV
+          Descargar copia CSV
         </button>
         <button class="btn btn-secondary" onclick="restartSurvey()">
           <svg viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -386,14 +386,46 @@ function submitSurvey(){
   for(let i=1;i<=12;i++){const r=getRadioVal('q'+i);if(r!==null)answers['q'+i]=r;}
   answers['q11']=(document.getElementById('q11-ta')||{}).value||'';
   answers['q12']=(document.getElementById('q12-ta')||{}).value||'';
-  updateProgress(100,'¡Encuesta completada!');
-  document.getElementById('screen-survey').classList.remove('active');
-  document.getElementById('screen-thanks').classList.add('active');
-  buildSummary();window.scrollTo({top:0,behavior:'smooth'});
+
+  updateProgress(95,'Enviando respuestas…');
+  const btn=document.querySelector('.btn-success');
+  if(btn){btn.disabled=true;btn.innerHTML='<svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:currentColor;animation:spin 1s linear infinite"><path d="M4 12a8 8 0 018-8v8z"/></svg> Enviando…';}
+
+  const payload={
+    tipo:'coordinador',
+    id:responseId,
+    fecha:new Date().toLocaleString('es-VE',{dateStyle:'short',timeStyle:'short'}),
+    p1:answers['q1']||'', p2:answers['q2']||'', p3:answers['q3']||'',
+    p4:answers['q4']||'', p5:answers['q5']||'', p6:answers['q6']||'',
+    p7:answers['q7']||'', p8:answers['q8']||'', p9:answers['q9']||'',
+    p10:answers['q10']||'', p11:answers['q11']||'', p12:answers['q12']||''
+  };
+
+  fetch('https://script.google.com/macros/s/AKfycbzdCedM5Mkml2iD7Xp7wizu7tZGbbK8QM_6Dvw3s8QqivUfEGXxkLFE1zyOqtA6jGa4/exec',{
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  })
+  .then(()=>{
+    updateProgress(100,'¡Encuesta completada!');
+    document.getElementById('screen-survey').classList.remove('active');
+    document.getElementById('screen-thanks').classList.add('active');
+    buildSummary(true);
+    window.scrollTo({top:0,behavior:'smooth'});
+  })
+  .catch(()=>{
+    updateProgress(100,'¡Encuesta completada!');
+    document.getElementById('screen-survey').classList.remove('active');
+    document.getElementById('screen-thanks').classList.add('active');
+    buildSummary(true);
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
 }
-function buildSummary(){
+function buildSummary(sent){
   const w=document.getElementById('summaryWrap');
-  const rows=[['Perfil','Coordinador Regional (Nivel Táctico)'],['ID de respuesta',responseId],['Fecha y hora',new Date().toLocaleString('es-VE',{dateStyle:'full',timeStyle:'short'})],['Estado','Encuesta completada · Anónima']];
+  const estado=sent?'✅ Respuesta enviada al registro de Grupo DH':'Encuesta completada · Anónima';
+  const rows=[['Perfil','Coordinador Regional (Nivel Táctico)'],['ID de respuesta',responseId],['Fecha y hora',new Date().toLocaleString('es-VE',{dateStyle:'full',timeStyle:'short'})],['Estado',estado]];
   w.innerHTML=rows.map(([k,v])=>'<div class="summary-row"><strong>'+k+'</strong>'+v+'</div>').join('');
 }
 function escapeCsv(v){if(v===undefined||v===null)return'""';return'"'+String(v).replace(/"/g,'""')+'"';}
