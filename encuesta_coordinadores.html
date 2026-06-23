@@ -401,26 +401,19 @@ function submitSurvey(){
     p10:answers['q10']||'', p11:answers['q11']||'', p12:answers['q12']||''
   };
 
-  fetch('https://script.google.com/macros/s/AKfycbxgl10L9Lb7TS7H7s9tMAyC6EbINrAuEvCAi124A_xrAQ0xXn5qR-28_Zky4DXU_T4l/exec',{
-    method:'GET',
-    mode:'no-cors',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(payload)
-  })
-  .then(()=>{
+  var qs = Object.keys(payload).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(payload[k])).join('&');
+  var fullUrl = 'https://script.google.com/macros/s/AKfycbxgl10L9Lb7TS7H7s9tMAyC6EbINrAuEvCAi124A_xrAQ0xXn5qR-28_Zky4DXU_T4l/exec?' + qs;
+
+  var img = new Image();
+  img.src = fullUrl;
+
+  setTimeout(function(){
     updateProgress(100,'¡Encuesta completada!');
     document.getElementById('screen-survey').classList.remove('active');
     document.getElementById('screen-thanks').classList.add('active');
     buildSummary(true);
     window.scrollTo({top:0,behavior:'smooth'});
-  })
-  .catch(()=>{
-    updateProgress(100,'¡Encuesta completada!');
-    document.getElementById('screen-survey').classList.remove('active');
-    document.getElementById('screen-thanks').classList.add('active');
-    buildSummary(true);
-    window.scrollTo({top:0,behavior:'smooth'});
-  });
+  }, 2000);
 }
 function buildSummary(sent){
   const w=document.getElementById('summaryWrap');

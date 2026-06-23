@@ -462,28 +462,22 @@ function submitSurvey(){
     p13:answers['q13']||'', p14:answers['q14']||''
   };
 
-  fetch('https://script.google.com/macros/s/AKfycbxgl10L9Lb7TS7H7s9tMAyC6EbINrAuEvCAi124A_xrAQ0xXn5qR-28_Zky4DXU_T4l/exec', {
-    method:'POST',
-    mode:'no-cors',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(payload)
-  })
-  .then(()=>{
+  // Build GET URL with all params
+  var qs = Object.keys(payload).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(payload[k])).join('&');
+  var fullUrl = 'https://script.google.com/macros/s/AKfycbxgl10L9Lb7TS7H7s9tMAyC6EbINrAuEvCAi124A_xrAQ0xXn5qR-28_Zky4DXU_T4l/exec?' + qs;
+
+  // Send via image tag (bypasses CORS completely)
+  var img = new Image();
+  img.src = fullUrl;
+
+  // Show thank you after 2 seconds regardless
+  setTimeout(function(){
     updateProgress(100,'¡Encuesta completada!');
     document.getElementById('screen-survey').classList.remove('active');
     document.getElementById('screen-thanks').classList.add('active');
     buildSummary(true);
     window.scrollTo({top:0,behavior:'smooth'});
-  })
-  .catch(()=>{
-    // Even if fetch fails (no-cors gives opaque response), show success
-    // Data was sent; no-cors mode doesn't allow reading the response
-    updateProgress(100,'¡Encuesta completada!');
-    document.getElementById('screen-survey').classList.remove('active');
-    document.getElementById('screen-thanks').classList.add('active');
-    buildSummary(true);
-    window.scrollTo({top:0,behavior:'smooth'});
-  });
+  }, 2000);
 }
 
 function buildSummary(sent){
